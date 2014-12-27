@@ -72,30 +72,30 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests
             }
         }
 
-        [Fact]
-        public void RemoveBom()
-        {
-            foreach (var file in new DirectoryInfo("..\\..").EnumerateFiles("*", SearchOption.AllDirectories))
-            {
-                try
-                {
-                    var allBytes = File.ReadAllBytes(file.FullName);
-                    var allText = File.ReadAllText(file.FullName);
-                    if (allBytes.Length - allText.Length == 3 &&
-                        allBytes[0] == 0xef &&
-                        allBytes[1] == 0xbb &&
-                        allBytes[2] == 0xbf)
-                    {
-                        Console.WriteLine("{0} {1}", file.FullName, file.Length);
-                        File.WriteAllText(file.FullName, allText, Encoding.Default);
-                    }
-                }
-                catch
-                {
+        //[Fact]
+        //public void RemoveBom()
+        //{
+        //    foreach (var file in new DirectoryInfo("..\\..").EnumerateFiles("*", SearchOption.AllDirectories))
+        //    {
+        //        try
+        //        {
+        //            var allBytes = File.ReadAllBytes(file.FullName);
+        //            var allText = File.ReadAllText(file.FullName);
+        //            if (allBytes.Length - allText.Length == 3 &&
+        //                allBytes[0] == 0xef &&
+        //                allBytes[1] == 0xbb &&
+        //                allBytes[2] == 0xbf)
+        //            {
+        //                Console.WriteLine("{0} {1}", file.FullName, file.Length);
+        //                File.WriteAllText(file.FullName, allText, Encoding.Default);
+        //            }
+        //        }
+        //        catch
+        //        {
 
-                }
-            }
-        }
+        //        }
+        //    }
+        //}
 
 
         class Scenario : IDisposable

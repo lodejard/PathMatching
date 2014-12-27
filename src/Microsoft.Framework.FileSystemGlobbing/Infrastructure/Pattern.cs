@@ -37,7 +37,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
 
                 if (segment == null)
                 {
-                    segment = new LiteralPathSegment(pattern.Substring(beginSegment, endPattern - beginSegment));
+                    segment = new LiteralPathSegment(pattern.Substring(beginSegment, endSegment - beginSegment));
                 }
 
                 Segments.Add(segment);

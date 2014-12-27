@@ -38,5 +38,20 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests
 
             scenario.AssertExact();
         }
+
+        [Theory]
+        [InlineData(@"beta/alpha.txt", @"beta/alpha.txt")]
+        [InlineData(@"beta\alpha.txt", @"beta/alpha.txt")]
+        [InlineData(@"beta/alpha.txt", @"beta\alpha.txt")]
+        [InlineData(@"beta\alpha.txt", @"beta\alpha.txt")]
+        public void FolderNamesAreTraversed(string includePattern, string filePath)
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include(includePattern)
+                .Files(filePath)
+                .Execute();
+
+            scenario.AssertExact("beta/alpha.txt");
+        }
     }
 }

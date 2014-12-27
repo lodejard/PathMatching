@@ -2,13 +2,16 @@
     "version": "1.0.0-*",
     "dependencies": {
     },
-
-    "frameworks" : {
-        "aspnet50" : { 
+    "frameworks": {
+        "net45": {
             "dependencies": {
             }
         },
-        "aspnetcore50" : { 
+        "aspnet50": {
+            "dependencies": {
+            }
+        },
+        "aspnetcore50": {
             "dependencies": {
                 "System.Runtime": "4.0.20-beta-22314",
                 "System.Collections": "4.0.10-beta-22314",

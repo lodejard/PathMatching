@@ -27,23 +27,26 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
         public List<string> Files { get; private set; }
 
         public FrameData Frame;
+        public Stack<FrameData> FrameStack = new Stack<FrameData>();
 
         public PatternMatchingResult Execute()
         {
             Files = new List<string>();
+
+            Frame.Stage = Stage.Complete;
             PushFrame(Stage.Predicting, DirectoryInfo);
 
-            DoPredicting();
-            DoEnumerating();
+            while (Frame.Stage != Stage.Complete)
+            {
+                DoPredicting();
+                DoEnumerating();
+                DoRecursion();
+            }
 
-            //foreach (var file in Frame.PredictLiteralIncludes)
-            //{
-            //    Files.Add(file);
-            //}
             return new PatternMatchingResult(Files);
         }
 
-        void DoPredicting()
+        private void DoPredicting()
         {
             if (Frame.Stage != Stage.Predicting)
             {
@@ -60,7 +63,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
             Frame.Stage = Stage.Enumerating;
         }
 
-        void DoEnumerating()
+        private void DoEnumerating()
         {
             if (Frame.Stage != Stage.Enumerating)
             {
@@ -73,21 +76,10 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
                 var directoryInfo = fileSystemInfo as DirectoryInfoBase;
                 if (directoryInfo != null)
                 {
-                    if (Frame.ActualDirectories == null)
-                    {
-                        Frame.ActualDirectories = new List<DirectoryInfoBase>();
-                    }
-                    Frame.ActualDirectories.Add(directoryInfo);
-                    continue;
-                }
-                var fileInfo = fileSystemInfo as FileInfoBase;
-                if (fileInfo != null)
-                {
-                    Frame.FileInfo = fileInfo;
                     var include = false;
                     foreach (var pattern in IncludePatternContexts)
                     {
-                        if (pattern.TestIncludeFile())
+                        if (pattern.TestIncludeDirectory(directoryInfo))
                         {
                             include = true;
                             continue;
@@ -97,7 +89,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
                     {
                         foreach (var pattern in ExcludePatternContexts)
                         {
-                            if (pattern.TestExcludeFile())
+                            if (pattern.TestExcludeDirectory(directoryInfo))
                             {
                                 include = false;
                                 continue;
@@ -106,14 +98,82 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
                     }
                     if (include)
                     {
-                        Files.Add(fileInfo.Name);
+                        if (Frame.ActualDirectories == null)
+                        {
+                            Frame.ActualDirectories = new List<DirectoryInfoBase>();
+                        }
+                        Frame.ActualDirectories.Add(directoryInfo);
+                    }
+                    continue;
+                }
+                var fileInfo = fileSystemInfo as FileInfoBase;
+                if (fileInfo != null)
+                {
+                    var include = false;
+                    foreach (var pattern in IncludePatternContexts)
+                    {
+                        if (pattern.TestIncludeFile(fileInfo))
+                        {
+                            include = true;
+                            continue;
+                        }
+                    }
+                    if (include)
+                    {
+                        foreach (var pattern in ExcludePatternContexts)
+                        {
+                            if (pattern.TestExcludeFile(fileInfo))
+                            {
+                                include = false;
+                                continue;
+                            }
+                        }
+                    }
+                    if (include)
+                    {
+                        if (Frame.RelativePath == null)
+                        {
+                            Files.Add(fileInfo.Name);
+                        }
+                        else
+                        {
+                            Files.Add(Frame.RelativePath + "/" + fileInfo.Name);
+                        }
                     }
                     continue;
                 }
             }
-            Frame.Stage = Stage.Iterating;
+            Frame.Stage = Stage.Recursing;
         }
 
+        private void DoRecursion()
+        {
+            if (Frame.Stage != Stage.Recursing)
+            {
+                return;
+            }
+
+            if (Frame.ActualDirectories == null)
+            {
+                PopFrame();
+                return;
+            }
+
+            if (Frame.ActualDirectoryEnumerating == false)
+            {
+                Frame.ActualDirectoryEnumerating = true;
+                Frame.ActualDirectoryEnumerator = Frame.ActualDirectories.GetEnumerator();
+            }
+
+            var moveNext = Frame.ActualDirectoryEnumerator.MoveNext();
+            if (moveNext == false)
+            {
+                PopFrame();
+                return;
+            }
+
+            PushFrame(Stage.Predicting, Frame.ActualDirectoryEnumerator.Current);
+        }
 
 
         public void AddPredictIncludeLiteral(string value)
@@ -131,11 +191,48 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
 
         public void PushFrame(Stage stage, DirectoryInfoBase directoryInfo)
         {
+            string relativePath;
+            if (FrameStack.Count == 0)
+            {
+                relativePath = null;
+            }
+            else if (FrameStack.Count == 1)
+            {
+                relativePath = directoryInfo.Name;
+            }
+            else
+            {
+                relativePath = Frame.RelativePath + '/' + directoryInfo.Name;
+            }
+
+            FrameStack.Push(Frame);
             Frame = new FrameData
             {
                 Stage = stage,
                 DirectoryInfo = directoryInfo,
+                RelativePath = relativePath,
             };
+            foreach (var x in IncludePatternContexts)
+            {
+                x.PushFrame(directoryInfo);
+            }
+            foreach (var x in ExcludePatternContexts)
+            {
+                x.PushFrame(directoryInfo);
+            }
+        }
+
+        public void PopFrame()
+        {
+            foreach (var x in ExcludePatternContexts)
+            {
+                x.PopFrame();
+            }
+            foreach (var x in IncludePatternContexts)
+            {
+                x.PopFrame();
+            }
+            Frame = FrameStack.Pop();
         }
 
         public enum Stage
@@ -143,19 +240,21 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
             Initialized,
             Predicting,
             Enumerating,
-            Iterating,
+            Recursing,
+            Complete,
         }
 
         public struct FrameData
         {
             public Stage Stage;
-            public List<string> PredictLiteralIncludes;
-
             public DirectoryInfoBase DirectoryInfo;
             public string RelativePath;
 
-            public FileInfoBase FileInfo;
+            public List<string> PredictLiteralIncludes;
+
             public List<DirectoryInfoBase> ActualDirectories;
+            public bool ActualDirectoryEnumerating;
+            public List<DirectoryInfoBase>.Enumerator ActualDirectoryEnumerator;
         }
     }
 }
