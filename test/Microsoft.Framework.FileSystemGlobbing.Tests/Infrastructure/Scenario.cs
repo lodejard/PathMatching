@@ -1,4 +1,4 @@
-using Microsoft.Framework.FileSystemGlobbing.Abstractions;
+using Microsoft.Framework.FileSystemGlobbing.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;

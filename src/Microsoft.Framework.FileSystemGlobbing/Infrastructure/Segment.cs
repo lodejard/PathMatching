@@ -1,12 +1,10 @@
 using System;
+using System.Collections.Generic;
 
-namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
+namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
 {
     public abstract class PatternSegment
     {
-        public virtual void PredictInclude(MatcherContext.FrameData frame)
-        {
-        }
     }
 
     public class RecursiveWildcardSegment : PatternSegment
@@ -32,6 +30,20 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
         }
 
         public string Value { get; }
+    }
+
+    public class WildcardPathSegment : PatternSegment
+    {
+        public WildcardPathSegment(string beginsWith, List<string> contains, string endsWith)
+        {
+            BeginsWith = beginsWith;
+            Contains = contains;
+            EndsWith = endsWith;
+        }
+
+        public string BeginsWith { get; }
+        public List<string> Contains { get; }
+        public string EndsWith { get; }
     }
 }
 

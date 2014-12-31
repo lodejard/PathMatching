@@ -1,28 +1,46 @@
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
+namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
 {
     public class Pattern
     {
+        private static char[] _slashes = new[] { '/', '\\' };
+        private static char[] _star = new[] { '*' };
+
         public Pattern(string pattern)
         {
             var endPattern = pattern.Length;
             for (int scanPattern = 0; scanPattern < endPattern;)
             {
                 var beginSegment = scanPattern;
-                var endSegment = NextIndex(pattern, new[] { '/', '\\' }, beginSegment, endPattern);
+                var endSegment = NextIndex(pattern, _slashes, scanPattern, endPattern);
 
                 PatternSegment segment = null;
 
+                if (segment == null && endSegment - beginSegment == 3)
+                {
+                    if (pattern[beginSegment] == '*' &&
+                        pattern[beginSegment + 1] == '.' &&
+                        pattern[beginSegment + 2] == '*')
+                    {
+                        // turn *.* into *
+                        beginSegment += 2;
+                    }
+                }
+
                 if (segment == null && endSegment - beginSegment == 2)
                 {
-                    if (pattern[beginSegment] == '*' && pattern[beginSegment + 1] == '*')
+                    if (pattern[beginSegment] == '*' &&
+                        pattern[beginSegment + 1] == '*')
                     {
+                        // recognized **
                         segment = new RecursiveWildcardSegment();
                     }
-                    else if (pattern[beginSegment] == '.' && pattern[beginSegment + 1] == '.')
+                    else if (pattern[beginSegment] == '.' &&
+                        pattern[beginSegment + 1] == '.')
                     {
+                        // recognized ..
                         segment = new ParentPathSegment();
                     }
                 }
@@ -31,13 +49,61 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
                 {
                     if (pattern[beginSegment] == '.')
                     {
+                        // recognized .
                         segment = new CurrentPathSegment();
                     }
                 }
 
                 if (segment == null)
                 {
-                    segment = new LiteralPathSegment(pattern.Substring(beginSegment, endSegment - beginSegment));
+                    var beginsWith = string.Empty;
+                    var contains = new List<string>();
+                    var endsWith = string.Empty;
+
+                    for (int scanSegment = beginSegment; scanSegment < endSegment;)
+                    {
+                        var beginLiteral = scanSegment;
+                        var endLiteral = NextIndex(pattern, _star, scanSegment, endSegment);
+
+                        if (beginLiteral == beginSegment)
+                        {
+                            if (endLiteral == endSegment)
+                            {
+                                // and the only bit
+                                segment = new LiteralPathSegment(Portion(pattern, beginLiteral, endLiteral));
+                            }
+                            else
+                            {
+                                // this is the first bit
+                                beginsWith = Portion(pattern, beginLiteral, endLiteral);
+                            }
+                        }
+                        else if (endLiteral == endSegment)
+                        {
+                            // this is the last bit
+                            endsWith = Portion(pattern, beginLiteral, endLiteral);
+                        }
+                        else
+                        {
+                            if (beginLiteral != endLiteral)
+                            {
+                                // this is a middle bit
+                                contains.Add(Portion(pattern, beginLiteral, endLiteral));
+                            }
+                            else
+                            {
+                                // note: NOOP here, adjascend *'s are collapsed when they
+                                // are mixed with literal text in a path segment
+                            }
+                        }
+
+                        scanSegment = endLiteral + 1;
+                    }
+
+                    if (segment == null)
+                    {
+                        segment = new WildcardPathSegment(beginsWith, contains, endsWith);
+                    }
                 }
 
                 Segments.Add(segment);
@@ -49,10 +115,15 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
         public IList<PatternSegment> Segments { get; } = new List<PatternSegment>();
 
 
-        private int NextIndex(string pattern, char[] anyOf, int startIndex, int endIndex)
+        private int NextIndex(string pattern, char[] anyOf, int beginIndex, int endIndex)
         {
-            var index = pattern.IndexOfAny(anyOf, startIndex, endIndex - startIndex);
+            var index = pattern.IndexOfAny(anyOf, beginIndex, endIndex - beginIndex);
             return index == -1 ? endIndex : index;
+        }
+
+        private string Portion(string pattern, int beginIndex, int endIndex)
+        {
+            return pattern.Substring(beginIndex, endIndex - beginIndex);
         }
     }
 }

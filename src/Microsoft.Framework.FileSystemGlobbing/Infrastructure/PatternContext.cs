@@ -1,7 +1,8 @@
+using Microsoft.Framework.FileSystemGlobbing.Abstractions;
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
+namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
 {
     public class PatternContext
     {
@@ -17,6 +18,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
         public Stack<FrameData> FrameStack { get; } = new Stack<FrameData>();
 
         public LiteralPathSegment LiteralPathSegment { get { return Frame.Segment as LiteralPathSegment; } }
+        public WildcardPathSegment WildcardPathSegment { get { return Frame.Segment as WildcardPathSegment; } }
 
         public void PredictInclude()
         {
@@ -39,16 +41,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
         {
             if (Frame.PatternNotApplicable) { return false; }
 
-            var literal = LiteralPathSegment;
-            if (literal != null)
-            {
-                if (string.Equals(literal.Value, fileInfo.Name, StringComparison.Ordinal))
-                {
-                    return true;
-                }
-                return false;
-            }
-            return false;
+            return TestMatchingSegment(fileInfo.Name);
         }
 
         public bool TestExcludeFile(FileInfoBase fileInfo)
@@ -74,14 +67,53 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
 
         public bool TestMatchingDirectory(DirectoryInfoBase directoryInfo)
         {
+            return TestMatchingSegment(directoryInfo.Name);
+        }
+
+        public bool TestMatchingSegment(string value)
+        {
             var literal = LiteralPathSegment;
             if (literal != null)
             {
-                if (string.Equals(literal.Value, directoryInfo.Name, StringComparison.Ordinal))
+                if (!string.Equals(literal.Value, value, StringComparison.Ordinal))
                 {
-                    return true;
+                    return false;
                 }
-                return false;
+                return true;
+            }
+            var wildcard = WildcardPathSegment;
+            if (wildcard != null)
+            {
+                if (value.Length < wildcard.BeginsWith.Length + wildcard.EndsWith.Length)
+                {
+                    return false;
+                }
+                if (!value.StartsWith(wildcard.BeginsWith, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+                if (!value.EndsWith(wildcard.EndsWith, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                var beginRemaining = wildcard.BeginsWith.Length;
+                var endRemaining = value.Length - wildcard.EndsWith.Length;
+                for (var containsIndex = 0; containsIndex != wildcard.Contains.Count; ++containsIndex)
+                {
+                    var containsValue = wildcard.Contains[containsIndex];
+                    var indexOf = value.IndexOf(
+                        value: containsValue,
+                        startIndex: beginRemaining,
+                        count: endRemaining - beginRemaining,
+                        comparisonType: StringComparison.Ordinal);
+                    if (indexOf == -1)
+                    {
+                        return false;
+                    }
+                    beginRemaining = indexOf + containsValue.Length;
+                }
+                return true;
             }
             return false;
         }
@@ -108,7 +140,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
                 PushFrame(0);
                 return;
             }
-            if (Frame.PatternNotApplicable || 
+            if (Frame.PatternNotApplicable ||
                 !TestMatchingDirectory(directoryInfo))
             {
                 PushFrame(new FrameData { PatternNotApplicable = true });
@@ -125,7 +157,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
 
         public void PushFrame(FrameData frame)
         {
-            FrameStack.Push(frame);
+            FrameStack.Push(Frame);
             Frame = frame;
         }
 

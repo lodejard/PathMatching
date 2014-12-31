@@ -2,7 +2,7 @@ using Microsoft.Framework.FileSystemGlobbing.Abstractions;
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Framework.FileSystemGlobbing
+namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
 {
     public class Matcher
     {

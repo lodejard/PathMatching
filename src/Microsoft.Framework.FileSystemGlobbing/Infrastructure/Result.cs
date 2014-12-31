@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
+namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
 {
     public class PatternMatchingResult
     {
