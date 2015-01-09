@@ -115,6 +115,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests
 
             scenario.AssertExact(matchesExpected);
         }
+
         [Fact]
         public void StarDotStarIsSameAsStar()
         {
@@ -126,5 +127,15 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests
             scenario.AssertExact("alpha.txt", "alpha.", ".txt", ".", "alpha", "txt");
         }
 
+        [Fact]
+        public void IncompletePatternsDoNotMatch()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("*/*.txt")
+                .Files("one/x.txt", "two/x.txt", "x.txt")
+                .Execute();
+
+            scenario.AssertExact("one/x.txt", "two/x.txt");
+        }
     }
 }

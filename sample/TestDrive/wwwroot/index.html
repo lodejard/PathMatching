@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Path Matching</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="text/css" rel="stylesheet" href="http://ajax.aspnetcdn.com/ajax/bootstrap/3.3.1/css/bootstrap.css" />
+</head>
+<body>
+    <div class="container">
+        <form role="form" id="screen">
+            <div class="row">
+                <div class="col-xs-6">
+                    <div class="form-group">
+                        <label for="include">Include:</label>
+                        <textarea id="include" name="include" class="form-control" rows="5" placeholder="One pattern per line"></textarea>
+                    </div>
+                </div>
+                <div class="col-xs-6">
+                    <div class="form-group">
+                        <label for="exclude">Exclude:</label>
+                        <textarea id="exclude" name="exclude" class="form-control" rows="5" placeholder="One pattern per line"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-6">
+                    <div class="form-group">
+                        <label for="files">Files:</label>
+                        <textarea id="files" name="files" class="form-control" rows="30" placeholder="One file per line"></textarea>
+                    </div>
+                </div>
+                <div class="col-xs-6">
+                    <div class="form-group">
+                        <label for="result">Result:</label>
+                        <textarea class="form-control" rows="30" id="result" placeholder="Match results"></textarea>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-1.9.1.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/bootstrap/3.3.1/bootstrap.js"></script>
+
+    <script src="app.js"></script>
+</body>
+</html>

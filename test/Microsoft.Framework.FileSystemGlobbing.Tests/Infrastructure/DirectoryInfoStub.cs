@@ -22,9 +22,11 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests.Infrastructure
 
         public override IEnumerable<FileSystemInfoBase> EnumerateFileSystemInfos(string searchPattern, SearchOption searchOption)
         {
+            var names = new HashSet<string>();
+
             foreach (var path in Paths)
             {
-                if (!path.StartsWith(FullName))
+                if (!path.Replace('\\','/').StartsWith(FullName.Replace('\\', '/')))
                 {
                     continue;
                 }
@@ -42,10 +44,15 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests.Infrastructure
                 }
                 else
                 {
-                    yield return new DirectoryInfoStub(
-                        fullName: path.Substring(0, endSegment + 1), 
-                        name: path.Substring(beginSegment, endSegment - beginSegment),
-                        paths: Paths);
+                    var name = path.Substring(beginSegment, endSegment - beginSegment);
+                    if (!names.Contains(name))
+                    {
+                        names.Add(name);
+                        yield return new DirectoryInfoStub(
+                            fullName: path.Substring(0, endSegment + 1),
+                            name: name,
+                            paths: Paths);
+                    }
                 }
             }
         }

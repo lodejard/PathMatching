@@ -41,14 +41,14 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
         {
             if (Frame.PatternNotApplicable) { return false; }
 
-            return TestMatchingSegment(fileInfo.Name);
+            return IsLastSegment() && TestMatchingSegment(fileInfo.Name);
         }
 
         public bool TestExcludeFile(FileInfoBase fileInfo)
         {
             if (Frame.PatternNotApplicable) { return false; }
 
-            throw new NotImplementedException();
+            return IsLastSegment() && TestMatchingSegment(fileInfo.Name);
         }
 
         public bool TestIncludeDirectory(DirectoryInfoBase directoryInfo)
@@ -68,6 +68,11 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
         public bool TestMatchingDirectory(DirectoryInfoBase directoryInfo)
         {
             return TestMatchingSegment(directoryInfo.Name);
+        }
+
+        public bool IsLastSegment()
+        {
+            return Frame.SegmentIndex == Pattern.Segments.Count - 1;
         }
 
         public bool TestMatchingSegment(string value)
