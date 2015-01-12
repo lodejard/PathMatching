@@ -153,7 +153,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
         }
         public bool IsContains
         {
-            get { return !IsStartsWith && !IsContains; }
+            get { return !IsStartsWith && !IsEndsWith; }
         }
 
         public override void PushFrame(DirectoryInfoBase directory)
@@ -181,6 +181,11 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                     // starting path incrementally satisfied
                     frame.SegmentIndex += 1;
                 }
+            }
+            else if (IsContains && TestMatchingGroup(directory))
+            {
+                frame.SegmentIndex = Frame.SegmentGroup.Count;
+                frame.BacktrackAvailable = 0;
             }
             else
             {
@@ -248,7 +253,6 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
 
             public int BacktrackAvailable;
             public int SegmentIndex;
-            public PatternSegment Segment;
         }
     }
 
@@ -271,6 +275,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
             
             if (IsStartsWith && !TestMatchingSegment(directory.Name))
             {
+                // deterministic not-included
                 return false;
             }
             return true;
@@ -286,13 +291,27 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
         public override bool Test(FileInfoBase file)
         {
             if (Frame.IsNotApplicable) { return false; }
-            throw new NotImplementedException();
+
+            return IsEndsWith && TestMatchingGroup(file);
         }
 
         public override bool Test(DirectoryInfoBase directory)
         {
             if (Frame.IsNotApplicable) { return false; }
-            throw new NotImplementedException();
+
+            if ( IsEndsWith && TestMatchingGroup(directory))
+            {
+                // directory excluded with file-like pattern
+                return true;
+            }
+            if ( Pattern.EndsWith.Count == 0 && 
+                Frame.SegmentGroupIndex == Pattern.Contains.Count -1 &&
+                TestMatchingGroup(directory))
+            {
+                // directory excluded by matching up to final '/**'
+                return true;
+            }
+            return false;
         }
     }
 }

@@ -173,6 +173,18 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests
             scenario.AssertExact("one/x.cs", "two/x.cs", "one/two/x.cs", "x.cs");
         }
 
+        [Fact]
+        public void InnerRecursiveWildcardMuseStartWithAndEndWith()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("one/**/*.cs")
+                .Files("one/x.cs", "two/x.cs", "one/two/x.cs", "x.cs")
+                .Files("one/x.txt", "two/x.txt", "one/two/x.txt", "x.txt")
+                .Execute();
+
+            scenario.AssertExact("one/x.cs", "one/two/x.cs");
+        }
+
 
         [Fact]
         public void ExcludeMayEndInDirectoryName()
@@ -184,6 +196,54 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests
                 .Execute();
 
             scenario.AssertExact("one/x.cs", "two/x.cs", "x.cs");
+        }
+
+
+        [Fact]
+        public void RecursiveWildcardSurroundingContainsWith()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("**/x/**")
+                .Files("x/1", "1/x/2", "1/x", "x", "1", "1/2")
+                .Execute();
+
+            scenario.AssertExact("x/1", "1/x/2");
+        }
+
+
+        [Fact]
+        public void SequentialFoldersMayBeRequired()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("a/b/**/1/2/**/2/3/**")
+                .Files("1/2/2/3/x", "1/2/3/y", "a/1/2/4/2/3/b", "a/2/3/1/2/b")
+                .Files("a/b/1/2/2/3/x", "a/b/1/2/3/y", "a/b/a/1/2/4/2/3/b", "a/b/a/2/3/1/2/b")
+                .Execute();
+
+            scenario.AssertExact("a/b/1/2/2/3/x", "a/b/a/1/2/4/2/3/b");
+        }
+
+        [Fact]
+        public void RecursiveAloneIncludesEverything()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("**")
+                .Files("1/2/2/3/x", "1/2/3/y")
+                .Execute();
+
+            scenario.AssertExact("1/2/2/3/x", "1/2/3/y");
+        }
+
+        [Fact]
+        public void ExcludeCanHaveSurroundingRecursiveWildcards()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("**")
+                .Exclude("**/x/**")
+                .Files("x/1", "1/x/2", "1/x", "x", "1", "1/2")
+                .Execute();
+
+            scenario.AssertExact("1/x", "x", "1", "1/2");
         }
 
         // exclude: **/.*/**
