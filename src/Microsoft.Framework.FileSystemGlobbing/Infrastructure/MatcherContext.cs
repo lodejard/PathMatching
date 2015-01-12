@@ -97,7 +97,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                         if (pattern.Test(directoryInfo))
                         {
                             include = true;
-                            continue;
+                            break;
                         }
                     }
                     if (include)
@@ -107,7 +107,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                             if (pattern.Test(directoryInfo))
                             {
                                 include = false;
-                                continue;
+                                break;
                             }
                         }
                     }
@@ -130,7 +130,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                         if (pattern.Test(fileInfo))
                         {
                             include = true;
-                            continue;
+                            break;
                         }
                     }
                     if (include)
@@ -140,7 +140,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                             if (pattern.Test(fileInfo))
                             {
                                 include = false;
-                                continue;
+                                break;
                             }
                         }
                     }
