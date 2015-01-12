@@ -106,6 +106,25 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                     }
                 }
 
+                if (segment is RecursiveWildcardSegment)
+                {
+                    if (StartsWith == null)
+                    {
+                        StartsWith = new List<PatternSegment>(Segments);
+                        EndsWith = new List<PatternSegment>();
+                        Contains = new List<IList<PatternSegment>>();
+                    }
+                    else if (EndsWith.Count != 0)
+                    {
+                        Contains.Add(EndsWith);
+                        EndsWith = new List<PatternSegment>();
+                    }
+                }
+                else if (EndsWith != null)
+                {
+                    EndsWith.Add(segment);
+                }
+
                 Segments.Add(segment);
 
                 scanPattern = endSegment + 1;
@@ -113,6 +132,11 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
         }
 
         public IList<PatternSegment> Segments { get; } = new List<PatternSegment>();
+
+        public IList<PatternSegment> StartsWith { get; }
+        public IList<IList<PatternSegment>> Contains { get; }
+        public IList<PatternSegment> EndsWith { get; }
+
 
 
         private int NextIndex(string pattern, char[] anyOf, int beginIndex, int endIndex)

@@ -13,6 +13,8 @@ $(function () {
             'data': $('#screen').serialize(),
             'contentType': 'application/x-www-form-urlencoded; charset=UTF-8',
             'success': function (data, textStatus, xhr) {
+                var recorder = xhr.getResponseHeader('recorder');
+                $("#recorder").text(recorder.split(',').join('\r\n'));
                 $("#result").text(data);
             },
             'error': function (xhr, textStatus, errorThrown) {

@@ -13,18 +13,32 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
             DirectoryInfo = directoryInfo;
             foreach (var pattern in matcher.IncludePatterns)
             {
-                IncludePatternContexts.Add(new PatternContext(this, pattern));
+                if (pattern.Contains == null)
+                {
+                    IncludePatternContexts.Add(new PatternContextLinearInclude(this, pattern));
+                }
+                else
+                {
+                    IncludePatternContexts.Add(new PatternContextRaggedInclude(this, pattern));
+                }
             }
             foreach (var pattern in matcher.ExcludePatterns)
             {
-                ExcludePatternContexts.Add(new PatternContext(this, pattern));
+                if (pattern.Contains == null)
+                {
+                    ExcludePatternContexts.Add(new PatternContextLinearExclude(this, pattern));
+                }
+                else
+                {
+                    ExcludePatternContexts.Add(new PatternContextRaggedExclude(this, pattern));
+                }
             }
         }
 
         public Matcher Matcher { get; }
         public DirectoryInfoBase DirectoryInfo { get; }
-        public IList<PatternContext> IncludePatternContexts { get; } = new List<PatternContext>();
-        public IList<PatternContext> ExcludePatternContexts { get; } = new List<PatternContext>();
+        public IList<PatternContextBase> IncludePatternContexts { get; } = new List<PatternContextBase>();
+        public IList<PatternContextBase> ExcludePatternContexts { get; } = new List<PatternContextBase>();
         public List<string> Files { get; private set; }
 
         public FrameData Frame;
@@ -80,7 +94,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                     var include = false;
                     foreach (var pattern in IncludePatternContexts)
                     {
-                        if (pattern.TestIncludeDirectory(directoryInfo))
+                        if (pattern.Test(directoryInfo))
                         {
                             include = true;
                             continue;
@@ -90,7 +104,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                     {
                         foreach (var pattern in ExcludePatternContexts)
                         {
-                            if (pattern.TestExcludeDirectory(directoryInfo))
+                            if (pattern.Test(directoryInfo))
                             {
                                 include = false;
                                 continue;
@@ -113,7 +127,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                     var include = false;
                     foreach (var pattern in IncludePatternContexts)
                     {
-                        if (pattern.TestIncludeFile(fileInfo))
+                        if (pattern.Test(fileInfo))
                         {
                             include = true;
                             continue;
@@ -123,7 +137,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Infrastructure
                     {
                         foreach (var pattern in ExcludePatternContexts)
                         {
-                            if (pattern.TestExcludeFile(fileInfo))
+                            if (pattern.Test(fileInfo))
                             {
                                 include = false;
                                 continue;

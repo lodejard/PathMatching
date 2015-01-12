@@ -12,15 +12,19 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests.Infrastructure
         {
             BasePath = basePath;
             DirectoryInfo = new DirectoryInfoStub(
-                fullName: BasePath, 
+                recorder: Recorder,
+                parentDirectory: null,
+                fullName: BasePath,
                 name: ".",
                 paths: new string[0]);
         }
 
+        public SystemIoRecorder Recorder { get; set; } = new SystemIoRecorder();
         public Matcher PatternMatching { get; set; } = new Matcher();
-        public DirectoryInfoStub DirectoryInfo { get; set; } 
+        public DirectoryInfoStub DirectoryInfo { get; set; }
         public string BasePath { get; set; }
         public PatternMatchingResult Result { get; set; }
+
 
         public Scenario Include(params string[] patterns)
         {
@@ -43,6 +47,8 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests.Infrastructure
         public Scenario Files(params string[] files)
         {
             DirectoryInfo = new DirectoryInfoStub(
+                DirectoryInfo.Recorder,
+                DirectoryInfo.ParentDirectory,
                 DirectoryInfo.FullName,
                 DirectoryInfo.Name,
                 DirectoryInfo.Paths.Concat(files.Select(file => BasePath + file)).ToArray());

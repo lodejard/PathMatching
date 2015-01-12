@@ -39,5 +39,9 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
             get { return DirectoryInfo.FullName; }
         }
 
+        public override DirectoryInfoBase ParentDirectory
+        {
+            get { return new DirectoryInfoWrapper(DirectoryInfo.Parent); }
+        }
     }
 }

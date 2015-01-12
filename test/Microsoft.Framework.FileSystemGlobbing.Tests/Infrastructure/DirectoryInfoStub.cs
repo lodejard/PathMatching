@@ -7,26 +7,39 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests.Infrastructure
 {
     public class DirectoryInfoStub : DirectoryInfoBase
     {
-        public DirectoryInfoStub(string fullName, string name, string[] paths)
+        public DirectoryInfoStub(
+            SystemIoRecorder recorder,
+            DirectoryInfoBase parentDirectory,
+            string fullName,
+            string name,
+            string[] paths)
         {
+            ParentDirectory = parentDirectory;
+            Recorder = recorder;
             FullName = fullName;
             Name = name;
             Paths = paths;
         }
 
+        public SystemIoRecorder Recorder { get; }
+
         public override string FullName { get; }
 
         public override string Name { get; }
+
+        public override DirectoryInfoBase ParentDirectory { get; }
 
         public string[] Paths { get; }
 
         public override IEnumerable<FileSystemInfoBase> EnumerateFileSystemInfos(string searchPattern, SearchOption searchOption)
         {
+            Recorder.Add("EnumerateFileSystemInfos", new {FullName, Name, searchPattern, searchOption});
+
             var names = new HashSet<string>();
 
             foreach (var path in Paths)
             {
-                if (!path.Replace('\\','/').StartsWith(FullName.Replace('\\', '/')))
+                if (!path.Replace('\\', '/').StartsWith(FullName.Replace('\\', '/')))
                 {
                     continue;
                 }
@@ -39,6 +52,8 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests.Infrastructure
                 if (endPath == endSegment)
                 {
                     yield return new FileInfoStub(
+                        recorder: Recorder,
+                        parentDirectory: this,
                         fullName: path,
                         name: path.Substring(beginSegment, endSegment - beginSegment));
                 }
@@ -49,6 +64,8 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests.Infrastructure
                     {
                         names.Add(name);
                         yield return new DirectoryInfoStub(
+                            recorder: Recorder,
+                            parentDirectory: this,
                             fullName: path.Substring(0, endSegment + 1),
                             name: name,
                             paths: Paths);

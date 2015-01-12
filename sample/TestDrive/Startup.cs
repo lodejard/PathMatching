@@ -26,14 +26,25 @@ namespace TestDrive
                 {
                     matcher.AddExclude(exclude);
                 }
+                var recorder = new SystemIoRecorder();
                 var directoryInfo = new DirectoryInfoStub(
+                    recorder,
+                    null,
                     @"c:\test\",
                     ".",
                     form["files"]
                         .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                         .Select(x => @"c:\test\" + x)
                         .ToArray());
+
                 var result = matcher.Execute(directoryInfo);
+
+                var recorderData = recorder.Records
+                    .Select(record => record.Aggregate("", (acc, kv) => acc + kv.Key + ":" + kv.Value + " "))
+                    .Aggregate("", (acc, line) => acc + line + ",");
+
+                context.Response.Headers["recorder"] = recorderData;
+
                 await context.Response.WriteAsync(string.Join("\r\n", result.Files));
             }));
         }

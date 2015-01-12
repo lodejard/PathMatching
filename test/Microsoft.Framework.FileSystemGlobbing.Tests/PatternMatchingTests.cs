@@ -128,7 +128,7 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests
         }
 
         [Fact]
-        public void IncompletePatternsDoNotMatch()
+        public void IncompletePatternsDoNotInclude()
         {
             var scenario = new Scenario(@"c:\files\")
                 .Include("*/*.txt")
@@ -137,5 +137,57 @@ namespace Microsoft.Framework.FileSystemGlobbing.Tests
 
             scenario.AssertExact("one/x.txt", "two/x.txt");
         }
+
+        [Fact]
+        public void IncompletePatternsDoNotExclude()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("*/*.txt")
+                .Exclude("one/hello.txt")
+                .Files("one/x.txt", "two/x.txt")
+                .Execute();
+
+            scenario.AssertExact("one/x.txt", "two/x.txt");
+        }
+
+        [Fact]
+        public void TrailingRecursiveWildcardMatchesAllFiles()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("one/**")
+                .Files("one/x.txt", "two/x.txt", "one/x/y.txt")
+                .Execute();
+
+            scenario.AssertExact("one/x.txt", "one/x/y.txt");
+        }
+
+        [Fact]
+        public void LeadingRecursiveWildcardMatchesAllLeadingPaths()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("**/*.cs")
+                .Files("one/x.cs", "two/x.cs", "one/two/x.cs", "x.cs")
+                .Files("one/x.txt", "two/x.txt", "one/two/x.txt", "x.txt")
+                .Execute();
+
+            scenario.AssertExact("one/x.cs", "two/x.cs", "one/two/x.cs", "x.cs");
+        }
+
+
+        [Fact]
+        public void ExcludeMayEndInDirectoryName()
+        {
+            var scenario = new Scenario(@"c:\files\")
+                .Include("*.cs", "*/*.cs", "*/*/*.cs")
+                .Exclude("bin", "one/two")
+                .Files("one/x.cs", "two/x.cs", "one/two/x.cs", "x.cs", "bin/x.cs", "bin/two/x.cs")
+                .Execute();
+
+            scenario.AssertExact("one/x.cs", "two/x.cs", "x.cs");
+        }
+
+        // exclude: **/.*/**
+        // exclude: node_modules/*
+        // exclude: **/.cs
     }
 }

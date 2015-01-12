@@ -6,5 +6,6 @@ namespace Microsoft.Framework.FileSystemGlobbing.Abstractions
     {
         public abstract string Name { get; }
         public abstract string FullName { get; }
+        public abstract DirectoryInfoBase ParentDirectory { get; }
     }
 }
